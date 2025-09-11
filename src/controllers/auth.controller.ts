@@ -1,8 +1,5 @@
-import { PrismaClient } from "@prisma/client";
 import type { NextFunction, Request, Response } from "express";
 import { SLogin } from "../services/auth.services.js";
-
-const prisma = new PrismaClient();
 
 export const CLogin = async (
   req: Request,
