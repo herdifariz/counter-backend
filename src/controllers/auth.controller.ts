@@ -43,7 +43,6 @@ export const CUpdate = async (
   try {
     const { id } = req.params;
     const { username, email, name, password } = req.body;
-    log(req.body);
     const result = await SUpdate(Number(id), username, email, name, password);
     res.status(200).json(result);
   } catch (error) {

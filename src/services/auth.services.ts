@@ -84,7 +84,7 @@ export const SCreate = async (
 
   return {
     status: true,
-    message: "Admin created successfully",
+    message: "User created successfully",
   };
 };
 
@@ -100,7 +100,7 @@ export const SUpdate = async (
     where: { id },
   });
   if (!admin) {
-    throw Error("Admin not found");
+    throw Error("User not found");
   }
   // Check if username or email already exists
   const existingAdmin = await prisma.admin.findFirst({
@@ -132,7 +132,7 @@ export const SUpdate = async (
 
   return {
     status: true,
-    message: "Admin updated successfully",
+    message: "User updated successfully",
   };
 };
 
@@ -150,7 +150,7 @@ export const SDelete = async (id: number): Promise<IGlobalResponse> => {
   });
   return {
     status: true,
-    message: "Admin deleted successfully",
+    message: "User deleted successfully",
   };
 };
 
