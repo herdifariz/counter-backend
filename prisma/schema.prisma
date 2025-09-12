@@ -19,7 +19,7 @@ model Admin {
   username  String    @unique @db.VarChar(50)
   name      String    @db.VarChar(255)
   email     String    @unique @db.VarChar(255)
-  password  String
+  password  String    @db.VarChar(255)
   isActive  Boolean   @default(true)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
