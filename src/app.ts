@@ -2,6 +2,9 @@ import express from "express";
 import cors from "cors";
 import authRoutes from "./routes/auth.route.js";
 import { MErrorHandler } from "./middleware/error.middleware.js";
+import { connectRedis } from "./configs/redis.config.js";
+
+connectRedis();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
