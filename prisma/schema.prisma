@@ -19,9 +19,29 @@ model Admin {
   username  String    @unique @db.VarChar(50)
   name      String    @db.VarChar(255)
   email     String    @unique @db.VarChar(255)
-  password  String    @db.VarChar(255)
+  password  String    @db.VarChar(100)
   isActive  Boolean   @default(true)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
+}
+
+model Counter {
+  id           Int      @id @default(autoincrement())
+  name         String   @db.VarChar(255)
+  currentQueue Int      @default(0)
+  maxQueue     Int      @default(99)
+  queues       Queue[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Queue {
+  id        Int      @id @default(autoincrement())
+  number    Int
+  status    String
+  counterId Int
+  counter   Counter  @relation(fields: [counterId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

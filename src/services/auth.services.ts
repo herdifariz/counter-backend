@@ -36,7 +36,6 @@ export const SLogin = async (
     email: admin.email,
     name: admin.name,
   });
-  // const token = "dummy-token";
 
   return {
     status: true,
@@ -151,6 +150,25 @@ export const SDelete = async (id: number): Promise<IGlobalResponse> => {
   return {
     status: true,
     message: "User deleted successfully",
+  };
+};
+
+export const SGetAllAdmins = async (): Promise<IGlobalResponse> => {
+  const admins = await prisma.admin.findMany({
+    where: { deletedAt: null },
+    select: {
+      id: true,
+      username: true,
+      email: true,
+      name: true,
+      isActive: true,
+    },
+    orderBy: { createdAt: "desc" },
+  });
+  return {
+    status: true,
+    message: "Admins retrieved successfully",
+    data: admins,
   };
 };
 

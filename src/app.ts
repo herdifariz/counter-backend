@@ -3,8 +3,7 @@ import cors from "cors";
 import authRoutes from "./routes/auth.route.js";
 import { MErrorHandler } from "./middleware/error.middleware.js";
 import { connectRedis } from "./configs/redis.config.js";
-
-connectRedis();
+import { initializeCronJobs } from "./configs/scheduler.config.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -14,15 +13,13 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.get("/", (req, res) => {
-  res.send("Welcome to the API");
-});
-
 app.use("/api/v1/auth/", authRoutes);
 
 app.use(MErrorHandler);
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`Server is running on port http://localhost:${PORT}`);
+  connectRedis();
+  console.log(`Server is running on http://localhost:${PORT}`);
+  initializeCronJobs();
 });

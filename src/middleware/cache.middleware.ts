@@ -2,7 +2,6 @@ import type { Request, Response, NextFunction } from "express";
 import { redisClient } from "../configs/redis.config.js";
 import crypto from "crypto";
 import type { cacheOptions } from "../interface/cache.interface.js";
-import { invalid } from "joi";
 
 export const MCache = (options: cacheOptions = {}) => {
   const {
@@ -100,12 +99,12 @@ const generateCacheKey = (req: Request, prefix: string): string => {
   const method = req.method;
   const userAgent = req.get("User-Agent") || "";
 
-  const userId = req.admin?.id || "anonymous";
+  // const userId = req.admin?.id || "anonymous";
 
   const keyData = {
     method,
     url,
-    userId,
+    // userId,
     userAgent: crypto
       .createHash("md5")
       .update(userAgent)
@@ -156,6 +155,6 @@ export const CachePresets = {
   user: (ttl: number = 600): cacheOptions => ({
     ttl,
     keyPrefix: "user_cache",
-    skipCacheIf: (req: Request) => !req.admin,
+    // skipCacheIf: (req: Request) => !req.admin ,
   }),
 };
