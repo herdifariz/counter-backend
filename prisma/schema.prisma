@@ -27,21 +27,24 @@ model Admin {
 }
 
 model Counter {
-  id           Int      @id @default(autoincrement())
-  name         String   @db.VarChar(255)
-  currentQueue Int      @default(0)
-  maxQueue     Int      @default(99)
+  id           Int       @id @default(autoincrement())
+  name         String    @db.VarChar(255)
+  currentQueue Int       @default(0)
+  maxQueue     Int       @default(99)
   queues       Queue[]
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
 }
 
 model Queue {
-  id        Int      @id @default(autoincrement())
+  id        Int       @id @default(autoincrement())
   number    Int
   status    String
   counterId Int
-  counter   Counter  @relation(fields: [counterId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  counter   Counter   @relation(fields: [counterId], references: [id])
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 }

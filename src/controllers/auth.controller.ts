@@ -6,7 +6,6 @@ import {
   SDelete,
   SGetAllAdmins,
 } from "../services/auth.services.js";
-import { log } from "console";
 
 export const CLogin = async (
   req: Request,
