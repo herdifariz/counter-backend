@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import authRoutes from "./routes/auth.route.js";
 import counterRoutes from "./routes/counter.route.js";
+import queueRoutes from "./routes/queue.route.js";
 import { MErrorHandler } from "./middleware/error.middleware.js";
 import { connectRedis } from "./configs/redis.config.js";
 import { initializeCronJobs } from "./configs/scheduler.config.js";
@@ -16,6 +17,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use("/api/v1/auth/", authRoutes);
 app.use("/api/v1/counters/", counterRoutes);
+app.use("/api/v1/queues/", queueRoutes);
 
 app.use(MErrorHandler);
 

@@ -9,6 +9,7 @@ import {
 } from "../controllers/counter.controller.js";
 
 const router = Router();
+
 router.get("/", CGetAllCounters);
 router.get("/:id", CGetCounterDetails);
 router.post("/", CCreateCounter);
