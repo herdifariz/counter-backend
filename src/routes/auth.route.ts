@@ -10,7 +10,7 @@ import { MValidate } from "../middleware/validate.middleware.js";
 import {
   createUserSchema,
   updateUserSchema,
-  userIdParamSchema,
+  idParamSchema,
   loginSchema,
 } from "../schemas/auth.schema.js";
 import {
@@ -18,6 +18,8 @@ import {
   MInvalidateCache,
   CachePresets,
 } from "../middleware/cache.middleware.js";
+import { MAuthenticate } from "../middleware/authenticate.middleware.js";
+import { SGetAdminDetails } from "../services/auth.services.js";
 
 const router = Router();
 
@@ -26,25 +28,30 @@ router.post(
   "/create",
   MValidate(createUserSchema, "body"),
   MInvalidateCache([`${CachePresets.user().keyPrefix}:*`]),
+  MAuthenticate,
   CCreate
 );
+router.get("/", MCache(CachePresets.user()), MAuthenticate, CGetAllAdmins);
 router.put(
   "/:id",
-  MValidate(userIdParamSchema, "params"),
+  MValidate(idParamSchema, "params"),
   MValidate(updateUserSchema, "body"),
   MInvalidateCache([`${CachePresets.user().keyPrefix}:*`]),
+  MAuthenticate,
   CUpdate
 );
 router.delete(
   "/:id",
-  MValidate(userIdParamSchema, "params"),
+  MValidate(idParamSchema, "params"),
   MInvalidateCache([`${CachePresets.user().keyPrefix}:*`]),
+  MAuthenticate,
   CDelete
 );
-router.get("/", MCache(CachePresets.user()), CGetAllAdmins);
-
-router.get("/test", (req, res) => {
-  res.json({ message: "Test route" });
-});
+router.get(
+  "/:id",
+  MValidate(idParamSchema, "params"),
+  MAuthenticate,
+  SGetAdminDetails
+);
 
 export default router;

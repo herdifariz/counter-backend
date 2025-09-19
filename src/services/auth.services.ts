@@ -2,10 +2,9 @@ import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcrypt";
 import type { IGlobalResponse } from "../interface/global.interface.js";
 import type { ILoginResponse } from "../interface/auth.interface.js";
-import jwt from "jsonwebtoken";
+import { UGenerateToken } from "../utils/jwt.utils.js";
 
 const prisma = new PrismaClient();
-const JWT_SECRET = process.env.JWT_SECRET || "secret_key";
 
 export const SLogin = async (
   usernameOrEmail: string,
@@ -172,6 +171,22 @@ export const SGetAllAdmins = async (): Promise<IGlobalResponse> => {
   };
 };
 
-const UGenerateToken = (payload: object): string => {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: "1d" });
+export const SGetAdminDetails = async (
+  id: number
+): Promise<IGlobalResponse> => {
+  const admin = await prisma.admin.findUnique({
+    where: { id },
+  });
+
+  if (!admin || admin.deletedAt) {
+    throw Error("Admin not found");
+  }
+
+  const { password, ...adminData } = admin;
+
+  return {
+    status: true,
+    message: "Admin details retrieved successfully",
+    data: adminData,
+  };
 };

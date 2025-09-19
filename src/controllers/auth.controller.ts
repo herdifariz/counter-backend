@@ -5,6 +5,7 @@ import {
   SUpdate,
   SDelete,
   SGetAllAdmins,
+  SGetAdminDetails,
 } from "../services/auth.services.js";
 
 export const CLogin = async (
@@ -71,6 +72,21 @@ export const CGetAllAdmins = async (
 ): Promise<void> => {
   try {
     const result = await SGetAllAdmins();
+
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const CGetAdminDetails = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const result = await SGetAdminDetails(Number(id));
 
     res.status(200).json(result);
   } catch (error) {

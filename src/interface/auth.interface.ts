@@ -1,5 +1,5 @@
 export interface ILoginResponse {
-  token: string;
+  token?: string;
   admin: {
     id: number;
     username: string;
@@ -8,4 +8,4 @@ export interface ILoginResponse {
   };
 }
 
-export type TLoginResponse = ILoginResponse;
+// export type TLoginResponse = ILoginResponse;

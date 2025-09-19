@@ -1,7 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import { UVerifyToken } from "../utils/jwt.utils.js";
 import { PrismaClient } from "@prisma/client";
-import { decode } from "punycode";
 
 const prisma = new PrismaClient();
 
@@ -23,15 +22,17 @@ export const MAuthenticate = async (
       throw Error("Unauthorized");
     }
 
-    const decoded = await UVerifyToken(token);
+    const payload = await UVerifyToken(token);
 
-    // const admin = await prisma.admin.findUnique({
-    //   where: { id: (decoded as typeof req.admin).id, deletedAt: null, isActive: true },
-    // });
+    const user = await prisma.admin.findUnique({
+      where: { id: payload.id, deletedAt: null, isActive: true },
+    });
 
-    if (req.admin) {
-      req.admin = decoded as typeof req.admin;
+    if (!user || !user.isActive || user.deletedAt) {
+      throw Error("Unauthorized");
     }
+
+    req.user = user;
 
     next();
   } catch (error) {

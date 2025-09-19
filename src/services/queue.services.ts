@@ -109,6 +109,9 @@ export const SClaimQueue = async (): Promise<IGlobalResponse> => {
     }
 
     let NextQueueNumber = counter.currentQueue + 1;
+    if (NextQueueNumber > counter.maxQueue) {
+      throw Error("Counter has reached its maximum queue limit");
+    }
 
     const queue = await prisma.queue.create({
       data: {
@@ -172,34 +175,151 @@ export const SNextQueue = async (counterId: number) => {
 };
 
 export const SReleaseQueue = async (id: number) => {
-  const existingQueue = await prisma.queue.findUnique({
-    where: { id },
-  });
+  try {
+    const existingQueue = await prisma.queue.findUnique({
+      where: { id },
+    });
 
-  if (!existingQueue) {
-    throw Error("Queue not found");
+    if (!existingQueue) {
+      throw Error("Queue not found");
+    }
+
+    const updatedQueue = await prisma.queue.update({
+      where: { id },
+      data: { status: "released" },
+    });
+
+    return {
+      status: true,
+      message: "Queue released successfully",
+      data: updatedQueue,
+    };
+  } catch (error) {
+    throw error;
   }
-
-  const updatedQueue = await prisma.queue.update({
-    where: { id },
-    data: { status: "completed" },
-  });
-
-  return {
-    status: true,
-    message: "Queue released successfully",
-    data: updatedQueue,
-  };
 };
 
-// export const SCurrentQueue = async () => {
-//   const counters = await prisma.counter.findMany({
-//     where: { isActive: true, deletedAt: null },
-//     include: {
-//       queues: {
-//         where: { status: "called" },
-//         orderBy: { createdAt: "desc" },
-//       },
-//     },
-//   });
-// };
+export const SCurrentQueue = async () => {
+  try {
+    const counters = await prisma.counter.findMany({
+      where: { isActive: true, deletedAt: null },
+      include: {
+        queues: {
+          where: { deletedAt: null },
+          orderBy: { createdAt: "desc" },
+          take: 1,
+        },
+      },
+    });
+
+    const result = counters.map((counter) => ({
+      counterId: counter.id,
+      counterName: counter.name,
+      currentQueue: counter.currentQueue,
+      maxQueue: counter.maxQueue,
+      isActive: counter.isActive,
+      lastQueue: counter.queues[0] || null,
+    }));
+
+    return {
+      status: true,
+      message: "Current queues retrieved successfully",
+      data: result,
+    };
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const SSkipQueue = async (counterId: number) => {
+  try {
+    const existingCounter = await prisma.queue.findUnique({
+      where: { id: counterId },
+    });
+
+    if (!existingCounter) {
+      throw Error("Counter not found");
+    }
+
+    const currentQueue = await prisma.queue.findFirst({
+      where: { counterId, status: "called" },
+      orderBy: { createdAt: "asc" },
+    });
+
+    if (currentQueue) {
+      await prisma.queue.update({
+        where: { id: currentQueue.id },
+        data: { status: "skipped" },
+      });
+    }
+
+    const nextQueue = await prisma.queue.findFirst({
+      where: { counterId, status: "claimed" },
+      orderBy: { createdAt: "asc" },
+    });
+
+    if (!nextQueue) {
+      throw Error("No more queues available");
+    }
+
+    const updatedQueue = await prisma.queue.update({
+      where: { id: nextQueue.id },
+      data: { status: "called" },
+      include: { counter: true },
+    });
+
+    return {
+      status: true,
+      message: "Queue skipped successfully",
+      data: updatedQueue,
+    };
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const SResetQueue = async (counterId: number) => {
+  try {
+    if (counterId) {
+      const counter = await prisma.counter.findUnique({
+        where: { id: counterId },
+      });
+
+      if (!counter) {
+        throw Error("Counter not found");
+      }
+
+      await prisma.queue.updateMany({
+        where: { counterId: counterId, deletedAt: null },
+        data: { status: "reset" },
+      });
+
+      await prisma.counter.update({
+        where: { id: counterId },
+        data: { currentQueue: 0 },
+      });
+
+      return {
+        status: true,
+        message: `Queues for counter ${counter.name} have been reset successfully`,
+      };
+    } else {
+      await prisma.queue.updateMany({
+        where: { deletedAt: null },
+        data: { status: "reset" },
+      });
+
+      await prisma.counter.updateMany({
+        where: { deletedAt: null },
+        data: { currentQueue: 0 },
+      });
+
+      return {
+        status: true,
+        message: "All queues have been reset successfully",
+      };
+    }
+  } catch (error) {
+    throw error;
+  }
+};

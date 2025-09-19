@@ -3,7 +3,9 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 export const SGetAllCounters = async () => {
-  const counters = await prisma.counter.findMany();
+  const counters = await prisma.counter.findMany({
+    where: { deletedAt: null },
+  });
   return {
     status: true,
     message: "Counters retrieved successfully",
@@ -36,6 +38,7 @@ export const SUpdateCounter = async (
   const existingCounter = await prisma.counter.findUnique({
     where: { id },
   });
+
   if (!existingCounter) {
     throw Error("Counter not found");
   }

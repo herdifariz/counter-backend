@@ -41,7 +41,7 @@ model Counter {
 model Queue {
   id        Int       @id @default(autoincrement())
   number    Int
-  status    String
+  status    String // "claimed", "called", "served", "skipped", "released"
   counterId Int
   counter   Counter   @relation(fields: [counterId], references: [id])
   createdAt DateTime  @default(now())

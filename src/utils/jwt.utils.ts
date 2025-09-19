@@ -2,10 +2,9 @@ import type { SignOptions } from "jsonwebtoken";
 import jwt from "jsonwebtoken";
 import type { Admin } from "@prisma/client";
 import { redisClient } from "../configs/redis.config.js";
-import type { Request } from "express";
 import ms from "ms";
 
-const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_SECRET = process.env.JWT_SECRET || "default_secret_key";
 const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN || "1d") as ms.StringValue;
 
 export const UGenerateToken = (admin: Partial<Admin>): string => {
@@ -15,7 +14,7 @@ export const UGenerateToken = (admin: Partial<Admin>): string => {
     { expiresIn: JWT_EXPIRES_IN } as SignOptions
   );
 
-  const key = `token:${admin.id}: ${token.split(".")[2]}`;
+  const key = `token:${token.split(".")[2]}:${admin.id}`;
 
   redisClient.set(key, token, {
     expiration: {
@@ -27,20 +26,18 @@ export const UGenerateToken = (admin: Partial<Admin>): string => {
 };
 
 export const UVerifyToken = async (token: string) => {
-  const payload = jwt.verify(token, JWT_SECRET as string);
+  const payload = jwt.verify(token, JWT_SECRET);
 
-  if (!payload) {
-    throw Error("Invalid token");
+  if (!payload || typeof payload === "string" || !payload.id) {
+    throw Error("Unauthorized");
   }
 
-  const key = `token:${(payload as Request["admin"])?.id}: ${
-    token.split(".")[2]
-  }`;
+  const key = `token:${token.split(".")[2]}:${payload.id}`;
 
   const data = await redisClient.get(key);
 
-  if (!data) {
-    throw Error("Invalid token");
+  if (!data || data !== token) {
+    throw Error("Unauthorized");
   }
 
   return payload;

@@ -20,6 +20,6 @@ export const updateUserSchema = Joi.object({
   password: Joi.string().min(6),
 });
 
-export const userIdParamSchema = Joi.object({
+export const idParamSchema = Joi.object({
   id: Joi.number().integer().positive().required(),
 });

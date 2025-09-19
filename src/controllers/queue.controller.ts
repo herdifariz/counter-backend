@@ -8,6 +8,9 @@ import {
   SGetQueueDetails,
   SReleaseQueue,
   SUpdateQueue,
+  SSkipQueue,
+  SCurrentQueue,
+  SResetQueue,
 } from "../services/queue.services.js";
 
 export const CGetAllQueue = async (
@@ -77,7 +80,7 @@ export const CDeleteQueue = async (
   }
 };
 
-export const CClaimedQueue = async (
+export const CClaimQueue = async (
   req: Request,
   res: Response,
   next: NextFunction
@@ -97,6 +100,58 @@ export const CNextQueue = async (
 ): Promise<void> => {
   try {
     const result = await SNextQueue(Number(req.params.counterId));
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const CCurrentQueue = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const result = await SCurrentQueue();
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const CSkipQueue = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const result = await SSkipQueue(Number(req.params.id));
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const CReleaseQueue = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const result = await SReleaseQueue(Number(req.params.id));
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const CResetQueue = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const result = await SResetQueue(Number(req.params.counterId));
     res.status(200).json(result);
   } catch (error) {
     next(error);

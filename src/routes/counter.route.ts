@@ -7,14 +7,15 @@ import {
   CUpdateCounter,
   CUpdateCounterStatus,
 } from "../controllers/counter.controller.js";
+import { MAuthenticate } from "../middleware/authenticate.middleware.js";
 
 const router = Router();
 
 router.get("/", CGetAllCounters);
 router.get("/:id", CGetCounterDetails);
-router.post("/", CCreateCounter);
-router.put("/:id", CUpdateCounter);
-router.patch("/:id/status", CUpdateCounterStatus);
-router.delete("/:id", CDeleteCounter);
+router.post("/", MAuthenticate, CCreateCounter);
+router.put("/:id", MAuthenticate, CUpdateCounter);
+router.patch("/:id/status", MAuthenticate, CUpdateCounterStatus);
+router.delete("/:id", MAuthenticate, CDeleteCounter);
 
 export default router;
