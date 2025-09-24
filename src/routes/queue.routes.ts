@@ -6,6 +6,7 @@ import {
   CNextQueue,
   CSkipQueue,
   CResetQueues,
+  CGetMetrics,
 } from "../controllers/queue.controller";
 import { MValidate } from "../middlewares/validate.middleware";
 import { MAuthenticate } from "../middlewares/authenticate.middleware";
@@ -17,12 +18,11 @@ import {
 
 const router = Router();
 
-// Public routes
+router.get("/metrics", CGetMetrics);
 router.post("/claim", CClaimQueue);
 router.post("/release", CReleaseQueue);
 router.get("/current", CGetCurrentQueues);
 
-// Protected routes for queue management
 router.post("/next", MAuthenticate, MValidate(VNextQueueSchema), CNextQueue);
 router.post("/skip", MAuthenticate, MValidate(VSkipQueueSchema), CSkipQueue);
 router.post(

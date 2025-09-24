@@ -13,7 +13,7 @@ export const CGetAllCounters = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const result = await SGetAllCounters();
+    const result = await SGetAllCounters(req.query.include_inactive === "true");
 
     res.status(200).json(result);
   } catch (error) {
@@ -42,8 +42,8 @@ export const CCreateCounter = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { name, max_queue } = req.body;
-    const result = await SCreateCounter(name, max_queue);
+    const { name, max_queue, is_active } = req.body;
+    const result = await SCreateCounter(name, max_queue, is_active);
 
     res.status(201).json(result);
   } catch (error) {
@@ -58,9 +58,9 @@ export const CUpdateCounter = async (
 ): Promise<void> => {
   try {
     const id = parseInt(req.params.id);
-    const { name, max_queue } = req.body;
+    const { name, max_queue, is_active } = req.body;
 
-    const result = await SUpdateCounter(id, name, max_queue);
+    const result = await SUpdateCounter(id, name, max_queue, is_active);
 
     res.status(200).json(result);
   } catch (error) {

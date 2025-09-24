@@ -4,9 +4,6 @@ import { IGlobalResponse } from "../interfaces/global.interface";
 
 const prisma = new PrismaClient();
 
-/**
- * Service to get all counters (excluding deleted ones)
- */
 export const SGetAllCounters = async (
   includeInactive: boolean = false
 ): Promise<IGlobalResponse> => {
@@ -32,9 +29,6 @@ export const SGetAllCounters = async (
   };
 };
 
-/**
- * Service to get a counter by ID
- */
 export const SGetCounterById = async (id: number): Promise<IGlobalResponse> => {
   const counter = await prisma.counter.findFirst({
     where: {
@@ -54,14 +48,11 @@ export const SGetCounterById = async (id: number): Promise<IGlobalResponse> => {
   };
 };
 
-/**
- * Service to create a new counter
- */
 export const SCreateCounter = async (
   name: string,
-  maxQueue: number
+  maxQueue: number,
+  isActive: boolean = true
 ): Promise<IGlobalResponse> => {
-  // Validate input
   if (!name || name.trim().length === 0) {
     throw AppError.badRequest("Counter name is required");
   }
@@ -70,11 +61,11 @@ export const SCreateCounter = async (
     throw AppError.badRequest("Max queue must be between 1 and 999");
   }
 
-  // Check if counter with same name exists (including deleted ones)
   const existingCounter = await prisma.counter.findFirst({
     where: {
       name: name.trim(),
       deletedAt: null,
+      isActive: isActive,
     },
   });
 
@@ -98,9 +89,6 @@ export const SCreateCounter = async (
   };
 };
 
-/**
- * Service to update a counter
- */
 export const SUpdateCounter = async (
   id: number,
   name?: string,
@@ -118,13 +106,11 @@ export const SUpdateCounter = async (
     throw AppError.notFound("Counter not found");
   }
 
-  // Validate input if provided
   if (name !== undefined) {
     if (!name || name.trim().length === 0) {
       throw AppError.badRequest("Counter name is required");
     }
 
-    // Check if name is already taken by another counter
     const existingCounter = await prisma.counter.findFirst({
       where: {
         name: name.trim(),
@@ -161,9 +147,6 @@ export const SUpdateCounter = async (
   };
 };
 
-/**
- * Service to delete a counter (soft delete)
- */
 export const SDeleteCounter = async (id: number): Promise<IGlobalResponse> => {
   const counter = await prisma.counter.findFirst({
     where: {
@@ -176,11 +159,10 @@ export const SDeleteCounter = async (id: number): Promise<IGlobalResponse> => {
     throw AppError.notFound("Counter not found");
   }
 
-  // Check if counter has associated active queues
   const activeQueueCount = await prisma.queue.count({
     where: {
       counterId: id,
-      status: { in: ["claimed", "called"] },
+      status: { in: ["CLAIMED", "CALLED"] },
     },
   });
 
@@ -188,7 +170,6 @@ export const SDeleteCounter = async (id: number): Promise<IGlobalResponse> => {
     throw AppError.conflict("Cannot delete counter with active queues");
   }
 
-  // Soft delete
   await prisma.counter.update({
     where: { id },
     data: {
@@ -204,9 +185,6 @@ export const SDeleteCounter = async (id: number): Promise<IGlobalResponse> => {
   };
 };
 
-/**
- * Service to toggle counter active status
- */
 export const SToggleCounterStatus = async (
   id: number
 ): Promise<IGlobalResponse> => {

@@ -4,6 +4,9 @@ import {
   SCreateAdmin,
   SUpdateAdmin,
   SDeleteAdmin,
+  SGetAllAdmins,
+  SGetAdminById,
+  SToggleAdminStatus,
 } from "../services/auth.service";
 
 export const CLogin = async (
@@ -65,6 +68,59 @@ export const CDeleteAdmin = async (
     const id = parseInt(req.params.id);
 
     const result = await SDeleteAdmin(id);
+
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Controller for getting all admins
+ */
+export const CGetAllAdmins = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const result = await SGetAllAdmins();
+
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Controller for getting admin by ID
+ */
+export const CGetAdminById = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const id = parseInt(req.params.id);
+    const result = await SGetAdminById(id);
+
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Controller for toggling admin status
+ */
+export const CToggleAdminStatus = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const id = parseInt(req.params.id);
+    const result = await SToggleAdminStatus(id);
 
     res.status(200).json(result);
   } catch (error) {

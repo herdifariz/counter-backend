@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcrypt";
 import { AppError } from "../errors/AppError";
-import { UGenerateToken } from "../utils/jwt";
+import { UGenerateToken } from "../utils/jwt.util";
 import { IGlobalResponse } from "../interfaces/global.interface";
 import { ILoginResponse } from "../interfaces/auth.interface";
 
@@ -20,13 +20,13 @@ export const SLogin = async (
   });
 
   if (!admin) {
-    throw AppError.unauthorized("Invalid credentials");
+    throw AppError.badRequest("Invalid credentials");
   }
 
   const isPasswordValid = await bcrypt.compare(password, admin.password);
 
   if (!isPasswordValid) {
-    throw AppError.unauthorized("Invalid credentials");
+    throw AppError.badRequest("Invalid credentials");
   }
 
   const token = UGenerateToken({

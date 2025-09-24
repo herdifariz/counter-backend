@@ -12,13 +12,10 @@ import { VCounterSchema } from "../validations/validation";
 
 const router = Router();
 
-// Public route to get all counters
 router.get("/", CGetAllCounters);
 
-// Public route to get counter by ID
 router.get("/:id", CGetCounterById);
 
-// Protected routes for counter management
 router.post(
   "/create",
   MAuthenticate,

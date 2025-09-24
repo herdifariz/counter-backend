@@ -1,15 +1,11 @@
-// Define the data source
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-// Define the client generator
 generator client {
   provider = "prisma-client-js"
 }
-
-// Admin model for authentication
 
 model Admin {
   id        Int       @id @default(autoincrement())
@@ -23,7 +19,6 @@ model Admin {
   deletedAt DateTime?
 }
 
-// Counter model for service counters
 model Counter {
   id           Int       @id @default(autoincrement())
   name         String    @unique
@@ -36,13 +31,21 @@ model Counter {
   deletedAt    DateTime?
 }
 
-// Queue model for tracking individual queue numbers
 model Queue {
-  id        Int      @id @default(autoincrement())
+  id        Int          @id @default(autoincrement())
   number    Int
-  status    String // 'claimed', 'called', 'served', 'skipped', 'released'
+  status    EQueueStatus @default(CLAIMED)
   counterId Int
-  counter   Counter  @relation(fields: [counterId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  counter   Counter      @relation(fields: [counterId], references: [id])
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+}
+
+enum EQueueStatus {
+  CLAIMED
+  CALLED
+  SERVED
+  SKIPPED
+  RELEASED
+  RESET
 }

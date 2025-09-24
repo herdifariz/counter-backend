@@ -8,6 +8,7 @@ export const VLoginSchema = Joi.object({
 export const VCounterSchema = Joi.object({
   name: Joi.string().required(),
   max_queue: Joi.number().integer().min(1).default(99),
+  is_active: Joi.boolean().optional(),
 });
 
 export const VNextQueueSchema = Joi.object({
@@ -29,6 +30,13 @@ export const VBaseID = Joi.object({
 export const VAdminSchema = Joi.object({
   username: Joi.string().required(),
   password: Joi.string().required().min(6),
+  email: Joi.string().email().required(),
+  name: Joi.string().required(),
+});
+
+export const VUpdateAdminSchema = Joi.object({
+  username: Joi.string().required(),
+  password: Joi.string().optional().allow("", null),
   email: Joi.string().email().required(),
   name: Joi.string().required(),
 });

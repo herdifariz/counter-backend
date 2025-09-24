@@ -1,27 +1,12 @@
 import { Request, Response, NextFunction } from "express";
-import { UVerifyToken } from "../utils/jwt";
+import { UVerifyToken } from "../utils/jwt.util";
 import { AppError } from "../errors/AppError";
 
-// Extend Express Request to include admin property
-declare global {
-  namespace Express {
-    interface Request {
-      admin?: {
-        id: number;
-        username: string;
-      };
-    }
-  }
-}
-
-/**
- * Middleware to authenticate requests using JWT
- */
-export const MAuthenticate = (
+export const MAuthenticate = async (
   req: Request,
   res: Response,
   next: NextFunction
-): void => {
+): Promise<void> => {
   try {
     const authHeader = req.headers.authorization;
 
@@ -35,8 +20,8 @@ export const MAuthenticate = (
       throw AppError.unauthorized();
     }
 
-    const decoded = UVerifyToken(token);
-    req.admin = decoded;
+    const decoded = await UVerifyToken(token);
+    req.admin = decoded as typeof req.admin;
 
     next();
   } catch (error) {

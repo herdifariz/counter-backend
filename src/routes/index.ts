@@ -1,24 +1,22 @@
-import { Router } from 'express';
-import authRoutes from './auth.routes';
-import counterRoutes from './counter.routes';
-import queueRoutes from './queue.routes';
-import { CInitSSE } from '../controllers/sse.controller';
+import { Router } from "express";
+import authRoutes from "./auth.routes";
+import counterRoutes from "./counter.routes";
+import queueRoutes from "./queue.routes";
+import cronRoutes from "./cron.routes";
+import { CInitSSE } from "../controllers/sse.controller";
 
 const router = Router();
 
-// API version prefix
-const API_PREFIX = '/api/v1';
+const API_PREFIX = "/api/v1";
 
-// Authentication routes
 router.use(`${API_PREFIX}/auth`, authRoutes);
 
-// Counter routes
 router.use(`${API_PREFIX}/counters`, counterRoutes);
 
-// Queue routes
 router.use(`${API_PREFIX}/queues`, queueRoutes);
 
-// SSE route for real-time updates
+router.use(`${API_PREFIX}/cron`, cronRoutes);
+
 router.get(`${API_PREFIX}/sse`, CInitSSE);
 
 export default router;

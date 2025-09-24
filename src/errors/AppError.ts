@@ -1,6 +1,3 @@
-/**
- * Universal error class for application errors
- */
 export class AppError extends Error {
   public statusCode: number;
   public isOperational: boolean;
@@ -15,14 +12,14 @@ export class AppError extends Error {
   ) {
     super(message);
     this.statusCode = statusCode;
-    this.isOperational = true; // Used to distinguish operational errors from programming errors
+    this.isOperational = true;
     this.field = field;
     this.errorDetail = errorDetail;
 
     Error.captureStackTrace(this, this.constructor);
   }
 
-  // Static methods for common HTTP errors
+  // static method untuk beberapa error code yang sering digunakan
   static badRequest(
     message: string = "Bad Request",
     errorDetail?: any,

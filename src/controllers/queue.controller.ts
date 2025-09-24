@@ -6,6 +6,7 @@ import {
   SNextQueue,
   SSkipQueue,
   SResetQueues,
+  SGetMetrics,
 } from "../services/queue.service";
 
 export const CClaimQueue = async (
@@ -17,6 +18,20 @@ export const CClaimQueue = async (
     const result = await SClaimQueue();
 
     res.status(201).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const CGetMetrics = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const result = await SGetMetrics();
+
+    res.status(200).json(result);
   } catch (error) {
     next(error);
   }
