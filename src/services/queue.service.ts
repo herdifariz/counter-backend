@@ -66,6 +66,19 @@ export const SClaimQueue = async (): Promise<IGlobalResponse> => {
     data: { currentQueue: nextQueueNumber },
   });
 
+  const queuesAhead = await prisma.queue.count({
+    where: {
+      counterId: counter.id,
+      status: "CLAIMED",
+      id: { lt: queue.id },
+    },
+  });
+
+  const positionInQueue = queuesAhead + 1;
+
+  const avgHandlingTimeMinutes = 5;
+  const estimatedWaitTime = positionInQueue * avgHandlingTimeMinutes;
+
   await publishQueueUpdate({
     event: "queue_claimed",
     counter_id: counter.id,
@@ -80,6 +93,8 @@ export const SClaimQueue = async (): Promise<IGlobalResponse> => {
       queueNumber: queue.number,
       counterName: queue.counter.name,
       counterId: queue.counter.id,
+      positionInQueue,
+      estimatedWaitTime,
     },
   };
 };
