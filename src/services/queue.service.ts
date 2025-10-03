@@ -385,3 +385,55 @@ export const SResetQueues = async (
     };
   }
 };
+
+export const SSearchQueues = async (
+  search?: string | null
+): Promise<IGlobalResponse> => {
+  const queues = await prisma.queue.findMany({
+    where: {
+      OR: [
+        {
+          number: isNaN(Number(search)) ? undefined : Number(search),
+        },
+        {
+          counter: {
+            name: {
+              contains: search || undefined,
+              mode: "insensitive",
+            },
+            deletedAt: null,
+          },
+        },
+      ],
+      counter: {
+        isActive: true,
+        deletedAt: null,
+      },
+    },
+    include: {
+      counter: true,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+    take: 20,
+  });
+
+  const data = queues.map((queue) => ({
+    id: queue.id,
+    queueNumber: queue.number,
+    status: queue.status,
+    counter: {
+      id: queue.counterId,
+      name: queue.counter.name,
+    },
+    createdAt: queue.createdAt,
+    updatedAt: queue.updatedAt,
+  }));
+
+  return {
+    status: true,
+    message: "Queues retrieved successfully",
+    data,
+  };
+};

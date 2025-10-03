@@ -40,3 +40,7 @@ export const VUpdateAdminSchema = Joi.object({
   email: Joi.string().email().required(),
   name: Joi.string().required(),
 });
+
+export const VGetSearchSchema = Joi.object({
+  q: Joi.string().optional().allow("", null),
+});
