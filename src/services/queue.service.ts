@@ -166,7 +166,7 @@ export const SGetCurrentQueues = async (
         deletedAt: null,
       },
     },
-    orderBy: { createdAt: "asc" },
+    orderBy: { createdAt: "desc" },
   });
 
   const data = counters.map((counter) => ({
