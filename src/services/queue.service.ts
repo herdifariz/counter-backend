@@ -515,6 +515,11 @@ export const SSearchQueues = async (
         isActive: true,
         deletedAt: null,
       },
+      NOT: {
+        status: {
+          in: ["RELEASED", "RESET"],
+        },
+      },
     },
     include: {
       counter: true,
