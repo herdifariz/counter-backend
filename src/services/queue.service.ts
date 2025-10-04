@@ -50,10 +50,13 @@ export const SClaimQueue = async (): Promise<IGlobalResponse> => {
     nextQueueNumber = 1;
   }
 
+  // Tentukan status awal queue
+  const initialStatus = counter.currentQueue === 0 ? "CALLED" : "CLAIMED";
+
   const queue = await prisma.queue.create({
     data: {
       number: nextQueueNumber,
-      status: "CLAIMED",
+      status: initialStatus,
       counterId: counter.id,
     },
     include: {
@@ -61,11 +64,29 @@ export const SClaimQueue = async (): Promise<IGlobalResponse> => {
     },
   });
 
-  await prisma.counter.update({
-    where: { id: counter.id },
-    data: { currentQueue: nextQueueNumber },
-  });
+  // Jika ini antrian pertama, langsung update currentQueue
+  if (initialStatus === "CALLED") {
+    await prisma.counter.update({
+      where: { id: counter.id },
+      data: { currentQueue: queue.number },
+    });
 
+    await publishQueueUpdate({
+      event: "queue_called",
+      counter_id: counter.id,
+      counter_name: counter.name,
+      queue_number: queue.number,
+    });
+  } else {
+    await publishQueueUpdate({
+      event: "queue_claimed",
+      counter_id: counter.id,
+      counter_name: counter.name,
+      queue_number: queue.number,
+    });
+  }
+
+  // Hitung posisi antrean (untuk antrian pertama pasti 1)
   const queuesAhead = await prisma.queue.count({
     where: {
       counterId: counter.id,
@@ -74,17 +95,10 @@ export const SClaimQueue = async (): Promise<IGlobalResponse> => {
     },
   });
 
-  const positionInQueue = queuesAhead + 1;
+  const positionInQueue = initialStatus === "CALLED" ? 0 : queuesAhead + 1;
 
   const avgHandlingTimeMinutes = 5;
   const estimatedWaitTime = positionInQueue * avgHandlingTimeMinutes;
-
-  await publishQueueUpdate({
-    event: "queue_claimed",
-    counter_id: counter.id,
-    counter_name: counter.name,
-    queue_number: nextQueueNumber,
-  });
 
   return {
     status: true,
@@ -95,6 +109,7 @@ export const SClaimQueue = async (): Promise<IGlobalResponse> => {
       counterId: queue.counter.id,
       positionInQueue,
       estimatedWaitTime,
+      status: queue.status,
     },
   };
 };
@@ -171,30 +186,26 @@ export const SGetCurrentQueues = async (
     orderBy: { name: "asc" },
   });
 
-  const currentQueues = await prisma.queue.findMany({
+  // Ambil queue yang sedang dipanggil (CALLED) untuk semua counter
+  const calledQueues = await prisma.queue.findMany({
     where: {
-      counterId: {
-        in: counters.map((c) => c.id),
-      },
-      counter: {
-        isActive: includeInactive ? undefined : true,
-        deletedAt: null,
-      },
+      counterId: { in: counters.map((c) => c.id) },
+      status: "CALLED",
     },
-    orderBy: { createdAt: "desc" },
   });
 
-  const data = counters.map((counter) => ({
-    id: counter.id,
-    name: counter.name,
-    currentQueue: counter.currentQueue,
-    maxQueue: counter.maxQueue,
-    isActive: counter.isActive,
-    status:
-      currentQueues.find((q) => q.counterId === counter.id)?.status || null,
-  }));
+  const data = counters.map((counter) => {
+    const activeQueue = calledQueues.find((q) => q.counterId === counter.id);
 
-  console.log("Current queues:", data);
+    return {
+      id: counter.id,
+      name: counter.name,
+      currentQueue: counter.currentQueue,
+      maxQueue: counter.maxQueue,
+      isActive: counter.isActive,
+      status: activeQueue?.status || null,
+    };
+  });
 
   return {
     status: true,
@@ -225,29 +236,73 @@ export const SNextQueue = async (
     throw AppError.badRequest("Counter is not active", null, "counterId");
   }
 
-  const claimedQueue = await prisma.queue.findFirst({
+  // 1️⃣ Cari antrean yang sedang dipanggil (CALLED)
+  const calledQueue = await prisma.queue.findFirst({
+    where: {
+      counterId,
+      status: "CALLED",
+    },
+    orderBy: { createdAt: "asc" },
+  });
+
+  if (calledQueue) {
+    // Ubah antrean ini jadi SERVED
+    await prisma.queue.update({
+      where: { id: calledQueue.id },
+      data: { status: "SERVED" },
+    });
+
+    await publishQueueUpdate({
+      event: "queue_served",
+      counter_id: counterId,
+      queue_number: calledQueue.number,
+      counter_name: counter.name,
+    });
+  }
+
+  // 2️⃣ Cari antrean berikutnya (CLAIMED)
+  const nextQueue = await prisma.queue.findFirst({
     where: {
       counterId,
       status: "CLAIMED",
     },
-    orderBy: {
-      createdAt: "asc",
-    },
+    orderBy: { createdAt: "asc" },
   });
 
-  if (!claimedQueue) {
-    throw AppError.notFound("No claimed queues found for this counter");
+  if (!nextQueue) {
+    // Tidak ada antrean berikutnya → reset currentQueue
+    await prisma.counter.update({
+      where: { id: counterId },
+      data: { currentQueue: 0 },
+    });
+
+    return {
+      status: true,
+      message: "No more queues to call",
+      data: {
+        counterId,
+        counterName: counter.name,
+        queueNumber: null,
+      },
+    };
   }
 
+  // 3️⃣ Update antrean berikutnya jadi CALLED
   await prisma.queue.update({
-    where: { id: claimedQueue.id },
+    where: { id: nextQueue.id },
     data: { status: "CALLED" },
+  });
+
+  // Update counter.currentQueue
+  await prisma.counter.update({
+    where: { id: counterId },
+    data: { currentQueue: nextQueue.number },
   });
 
   await publishQueueUpdate({
     event: "queue_called",
     counter_id: counterId,
-    queue_number: claimedQueue.number,
+    queue_number: nextQueue.number,
     counter_name: counter.name,
   });
 
@@ -255,7 +310,7 @@ export const SNextQueue = async (
     status: true,
     message: "Next queue called successfully",
     data: {
-      queueNumber: claimedQueue.number,
+      queueNumber: nextQueue.number,
       counterName: counter.name,
       counterId,
     },
@@ -284,20 +339,17 @@ export const SSkipQueue = async (
     throw AppError.badRequest("Counter is not active", null, "counterId");
   }
 
+  // 1️⃣ Cari antrean yang sedang dipanggil
   const calledQueue = await prisma.queue.findFirst({
-    where: {
-      counterId,
-      status: "CALLED",
-    },
-    orderBy: {
-      createdAt: "asc",
-    },
+    where: { counterId, status: "CALLED" },
+    orderBy: { createdAt: "asc" },
   });
 
   if (!calledQueue) {
     throw AppError.notFound("No called queue found for this counter");
   }
 
+  // Tandai antrean ini sebagai SKIPPED
   await prisma.queue.update({
     where: { id: calledQueue.id },
     data: { status: "SKIPPED" },
@@ -307,22 +359,61 @@ export const SSkipQueue = async (
     event: "queue_skipped",
     counter_id: counterId,
     queue_number: calledQueue.number,
+    counter_name: counter.name,
   });
 
-  try {
-    const nextQueueResult = await SNextQueue(counterId);
+  // 2️⃣ Cari antrean berikutnya (CLAIMED)
+  const nextQueue = await prisma.queue.findFirst({
+    where: { counterId, status: "CLAIMED" },
+    orderBy: { createdAt: "asc" },
+  });
+
+  if (!nextQueue) {
+    // Tidak ada antrean berikutnya → reset currentQueue
+    await prisma.counter.update({
+      where: { id: counterId },
+      data: { currentQueue: 0 },
+    });
+
     return {
       status: true,
-      message: "Queue skipped successfully and next queue called",
-      data: nextQueueResult.data,
-    };
-  } catch (error) {
-    console.warn("No more queues to call after skip:", error);
-    return {
-      status: true,
-      message: "Queue skipped successfully, no more queues to call",
+      message: "Queue skipped, no more queues available",
+      data: {
+        counterId,
+        counterName: counter.name,
+        queueNumber: null,
+      },
     };
   }
+
+  // Update antrean berikutnya jadi CALLED
+  await prisma.queue.update({
+    where: { id: nextQueue.id },
+    data: { status: "CALLED" },
+  });
+
+  // Update counter.currentQueue
+  await prisma.counter.update({
+    where: { id: counterId },
+    data: { currentQueue: nextQueue.number },
+  });
+
+  await publishQueueUpdate({
+    event: "queue_called",
+    counter_id: counterId,
+    queue_number: nextQueue.number,
+    counter_name: counter.name,
+  });
+
+  return {
+    status: true,
+    message: "Queue skipped, next queue called",
+    data: {
+      queueNumber: nextQueue.number,
+      counterName: counter.name,
+      counterId,
+    },
+  };
 };
 
 export const SResetQueues = async (
