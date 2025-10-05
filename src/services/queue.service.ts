@@ -47,6 +47,9 @@ export const SClaimQueue = async (): Promise<IGlobalResponse> => {
   const currentQueue = await prisma.queue.findFirst({
     where: {
       counterId: counter.id,
+      status: {
+        notIn: ["RESET", "RELEASED"],
+      },
     },
     orderBy: {
       number: "desc",
