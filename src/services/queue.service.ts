@@ -37,14 +37,27 @@ export const SClaimQueue = async (): Promise<IGlobalResponse> => {
       isActive: true,
       deletedAt: null,
     },
-    orderBy: { currentQueue: "asc" },
+    orderBy: { updatedAt: "asc" },
   });
 
   if (!counter) {
     throw AppError.notFound("No active counters found");
   }
 
-  let nextQueueNumber = counter.currentQueue + 1;
+  const currentQueue = await prisma.queue.findFirst({
+    where: {
+      counterId: counter.id,
+    },
+    orderBy: {
+      number: "desc",
+    },
+  });
+
+  if (!currentQueue) {
+    throw AppError.notFound("A");
+  }
+
+  let nextQueueNumber = currentQueue.number + 1;
 
   if (nextQueueNumber > counter.maxQueue) {
     nextQueueNumber = 1;
@@ -61,6 +74,15 @@ export const SClaimQueue = async (): Promise<IGlobalResponse> => {
     },
     include: {
       counter: true,
+    },
+  });
+
+  await prisma.counter.update({
+    where: {
+      id: counter.id,
+    },
+    data: {
+      updatedAt: new Date(),
     },
   });
 
