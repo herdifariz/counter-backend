@@ -53,11 +53,7 @@ export const SClaimQueue = async (): Promise<IGlobalResponse> => {
     },
   });
 
-  if (!currentQueue) {
-    throw AppError.notFound("A");
-  }
-
-  let nextQueueNumber = currentQueue.number + 1;
+  let nextQueueNumber = currentQueue ? currentQueue.number + 1 : 1;
 
   if (nextQueueNumber > counter.maxQueue) {
     nextQueueNumber = 1;
